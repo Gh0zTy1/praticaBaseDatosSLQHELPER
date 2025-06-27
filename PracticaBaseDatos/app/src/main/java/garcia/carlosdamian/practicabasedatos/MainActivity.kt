@@ -1,34 +1,26 @@
-package garcia.carlosdamian.practicabasedatos;
-
+package garcia.carlosdamian.practicabasedatos
 
 import android.os.Bundle
 import android.widget.Button
-
-
 import android.widget.EditText
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import garcia.carlosdamian.practicabasedatos.R
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import garcia.carlosdamian.practicabasedatos.data.Alumno
-import garcia.carlosdamian.practicabasedatos.data.AlumnoSQLHelper
 
 class MainActivity : AppCompatActivity() {
     private lateinit var db: AlumnoSQLHelper
+    private lateinit var studentsList: RecyclerView
+    private lateinit var studentAdapter: StudentAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
 
-        db= AlumnoSQLHelper(this)
+        db = AlumnoSQLHelper(this)
+        studentsList = findViewById(R.id.studentsList)
+        studentsList.layoutManager = LinearLayoutManager(this)
 
         val etNombre = findViewById<EditText>(R.id.etName)
         val etApellidoPaterno = findViewById<EditText>(R.id.etFirstLastName)
@@ -37,25 +29,30 @@ class MainActivity : AppCompatActivity() {
         val guardar = findViewById<Button>(R.id.save)
 
         guardar.setOnClickListener {
+            val nombre = etNombre.text.toString()
+            val apPaterno = etApellidoPaterno.text.toString()
+            val apMaterno = etApellidoMaterno.text.toString()
+            val programaEducativo = etProgramaEducativo.text.toString()
 
-            var nombre = etNombre.text.toString()
-            var apPaterno = etApellidoPaterno.text.toString()
-            var apMaterno = etApellidoMaterno.text.toString()
-            var programaEducativo = etProgramaEducativo.text.toString()
-
-            val alumno = Alumno(nombre, apPaterno, apMaterno, programaEducativo)
-            db.insertarAlumno(alumno)
-
-            Toast.makeText(this, "Alumnos Guardados", Toast.LENGTH_SHORT).show()
-
-            etNombre.text.clear()
-            etApellidoPaterno.text.clear()
-            etApellidoMaterno.text.clear()
-            etProgramaEducativo.text.clear()
-            
-
-
+            if (nombre.isNotEmpty() && apPaterno.isNotEmpty() && apMaterno.isNotEmpty() && programaEducativo.isNotEmpty()) {
+                val alumno = Alumno(nombre, apPaterno, apMaterno, programaEducativo)
+                db.insertarAlumno(alumno)
+                Toast.makeText(this, "Alumno Guardado", Toast.LENGTH_SHORT).show()
+                etNombre.text.clear()
+                etApellidoPaterno.text.clear()
+                etApellidoMaterno.text.clear()
+                etProgramaEducativo.text.clear()
+                loadStudents()
+            } else {
+                Toast.makeText(this, "Por favor, complete todos los campos", Toast.LENGTH_SHORT).show()
+            }
         }
+        loadStudents()
     }
 
+    private fun loadStudents() {
+        val students = db.obtenerAlumnos()
+        studentAdapter = StudentAdapter(students)
+        studentsList.adapter = studentAdapter
+    }
 }
